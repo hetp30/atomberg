@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GoalTrack | AtomQuest Hackathon 1.0
 
-## Getting Started
+A professional, enterprise-grade Goal Setting and Tracking Portal built for Atomberg Technologies.
 
-First, run the development server:
+## 🚀 Tech Stack & Hosting Choices
+We chose a modern, serverless architecture to ensure maximum performance, instant scalability, and zero-maintenance infrastructure:
+- **Frontend**: Next.js 14 (App Router), React, Tailwind CSS, shadcn/ui. Chosen for its superior developer experience and highly responsive, accessible UI components.
+- **Backend**: Next.js Serverless API Routes. This eliminates the need for a separate backend server, reducing infrastructure overhead and latency.
+- **Authentication**: NextAuth.js with Credentials Provider and strict Role-Based Access Control (RBAC) via JWTs.
+- **Database**: PostgreSQL (via Supabase) with Prisma ORM. Ensures robust relational data integrity for our complex 8-table schema while remaining cost-effective (Free Tier).
+- **Hosting**: Vercel. Provides automatic CI/CD deployments and serverless edge caching out of the box.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🔑 Demo Login Credentials
+The application is pre-seeded with accounts for all three user journeys. 
+**Password for all accounts:** `password123`
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Role | Email |
+|------|-------|
+| **Admin** | `admin@test.com` |
+| **Manager** | `manager@test.com` |
+| **Employee** | `employee@test.com` |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+*(Note: There are quick-access demo buttons on the login page for convenience).*
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ⚡ Core Features Implemented
+- **Business Logic Enforced**: 100% total weightage rules, 10% minimum weightage limits, and 8-goal maximums are enforced at both the UI and secure API levels.
+- **Quarterly Gating**: Check-in data entry is mathematically gated by Active Cycle Windows controlled by the Admin.
+- **Progress Scoring**: Graceful division-by-zero handling for all 4 required UoM types (MIN, MAX, TIMELINE, ZERO).
+- **Approval Workflows**: Complete flow for submission, manager review, mandatory rework comments, and locking.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 💻 Local Setup Instructions
+If you wish to run this repository locally:
+1. Clone the repository: `git clone <repo-url>`
+2. Install dependencies: `npm install`
+3. Set up the local SQLite database: `npx prisma db push`
+4. Start the server: `npm run dev`
+5. Click "Initialize Demo Database" on the login screen to generate users and cycles.

@@ -1,0 +1,155 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  password   String
+  role       String   @default("EMPLOYEE") // EMPLOYEE | MANAGER | ADMIN
+  managerId  String?
+  department String   @default("General")
+  manager    User?    @relation("Hierarchy", fields: [managerId], references: [id], onDelete: SetNull)
+  employees  User[]   @relation("Hierarchy")
+
+  goalSheets         GoalSheet[]        @relation("EmployeeSheets")
+  approvedSheets     GoalSheet[]        @relation("ApproverSheets")
+  checkinComments    CheckinComment[]
+  auditLogs          AuditLog[]         @relation("ChangedBy")
+  escalationLogs     EscalationLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GoalCycle {
+  id          String      @id @default(cuid())
+  name        String      // e.g. "FY 2025-26"
+  phase       String      @default("GOAL_SETTING") // GOAL_SETTING | Q1 | Q2 | Q3 | Q4
+  windowOpen  DateTime
+  windowClose DateTime
+  isActive    Boolean     @default(false)
+  createdById String
+
+  goalSheets  GoalSheet[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GoalSheet {
+  id             String    @id @default(cuid())
+  employeeId     String
+  cycleId        String
+  status         String    @default("DRAFT") // DRAFT | SUBMITTED | APPROVED | RETURNED | LOCKED
+  submittedAt    DateTime?
+  approvedById   String?
+  approvedAt     DateTime?
+  totalWeightage Float     @default(0)
+  returnComment  String?
+
+  employee    User      @relation("EmployeeSheets", fields: [employeeId], references: [id], onDelete: Cascade)
+  approvedBy  User?     @relation("ApproverSheets", fields: [approvedById], references: [id], onDelete: SetNull)
+  cycle       GoalCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  goals       Goal[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Goal {
+  id          String  @id @default(cuid())
+  sheetId     String
+  thrustArea  String
+  title       String
+  description String  @default("")
+  uomType     String  // MIN | MAX | TIMELINE | ZERO
+  target      String  // flexible: numeric string or date string
+  weightage   Float
+  isShared    Boolean @default(false)
+  sharedFrom  String? // FK → goals.id of the original goal
+
+  sheet           GoalSheet        @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  achievements    Achievement[]
+  checkinComments CheckinComment[]
+  childGoals      Goal[]           @relation("SharedGoalLink")
+  parentGoal      Goal?            @relation("SharedGoalLink", fields: [sharedFrom], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Achievement {
+  id             String   @id @default(cuid())
+  goalId         String
+  cyclePhase     String   // Q1 | Q2 | Q3 | Q4
+  actualValue    String   @default("")
+  progressScore  Float    @default(0)
+  status         String   @default("NOT_STARTED") // NOT_STARTED | ON_TRACK | COMPLETED
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@unique([goalId, cyclePhase])
+}
+
+model CheckinComment {
+  id        String @id @default(cuid())
+  goalId    String
+  managerId String
+  phase     String // Q1 | Q2 | Q3 | Q4
+  comment   String
+
+  goal    Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  manager User @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id          String @id @default(cuid())
+  entityType  String // goal | goal_sheet
+  entityId    String
+  changedById String
+  changeType  String // UPDATE | UNLOCK | APPROVE | RETURN | LOCK
+  oldValue    String @default("{}")
+  newValue    String @default("{}")
+
+  changedBy User @relation("ChangedBy", fields: [changedById], references: [id], onDelete: Cascade)
+
+  changedAt DateTime @default(now())
+}
+
+model EscalationRule {
+  id            String @id @default(cuid())
+  triggerType   String // NOT_SUBMITTED | NOT_APPROVED | CHECK_IN_MISSED
+  daysThreshold Int    @default(3)
+  notifyChain   String @default("EMPLOYEE,MANAGER,ADMIN") // comma-separated roles
+  isActive      Boolean @default(true)
+
+  logs EscalationLog[]
+
+  createdAt DateTime @default(now())
+}
+
+model EscalationLog {
+  id         String @id @default(cuid())
+  ruleId     String
+  userId     String
+  notifiedAt DateTime @default(now())
+  status     String   @default("SENT")
+
+  rule EscalationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
